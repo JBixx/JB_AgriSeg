@@ -1,0 +1,50 @@
+# =============================================================================
+#  JB_AgriSeg — fichiers exclus du dépôt
+# =============================================================================
+
+# --- Données brutes et converties (volumineuses, sous licence des sources)
+#     -> à télécharger / régénérer : voir README (prepare_dataset.py)
+Dataset/
+dataset/
+data/
+*.zip
+
+# --- Runs Ultralytics (checkpoints intermédiaires, centaines de Mo)
+runs/
+
+# --- Poids : seuls les modèles finaux de models/ sont versionnés
+*.pt
+*.onnx
+!models/best.pt
+!models/best.onnx
+!models/cls_best.pt
+!models/cls_best.onnx
+
+# --- Sorties lourdes ou régénérables (les rapports .md/.png restent versionnés)
+outputs/predictions/*
+!outputs/predictions/demo/
+*.log
+
+# --- Environnements Python et caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+
+# --- Secrets
+.env
+.streamlit/secrets.toml
+kaggle.json
+
+# --- OS / IDE
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.claude/
+prompt.md

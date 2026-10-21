@@ -1,0 +1,151 @@
+# =============================================================================
+#  Crop Disease Segmentation — configuration centrale
+#  Tous les chemins sont relatifs à la racine du projet.
+# =============================================================================
+
+project:
+  seed: 42                       # graine globale (splits, entraînement, échantillonnage)
+  device: auto                   # auto | cpu | 0 (GPU 0) | mps
+  outputs_dir: outputs
+  models_dir: models
+  use_system_certs: true         # utilise le magasin de certificats Windows/macOS (proxy/antivirus SSL)
+
+# -----------------------------------------------------------------------------
+#  Données brutes (dossier en lecture seule)
+# -----------------------------------------------------------------------------
+raw:
+  root: Dataset
+  # Jeu de segmentation : images + masques binaires PNG (1 classe "lésion")
+  seg_sources:
+    - images: "Dataset/archive (1)/data/data/images"
+      masks: "Dataset/archive (1)/data/data/masks"
+      name: leaf_disease_seg
+  # Variantes augmentées hors-ligne du même jeu (00000_0.jpg ... 00000_4.jpg).
+  # Utilisées UNIQUEMENT dans le split train et groupées par image d'origine
+  # pour éviter toute fuite vers val/test.
+  seg_augmented:
+    images: "Dataset/archive (1)/aug_data/aug_data/images"
+    masks: "Dataset/archive (1)/aug_data/aug_data/masks"
+  # Jeu de classification multi-sources (66 953 images, lu directement dans le zip)
+  cls_zip: "Dataset/archive.zip"
+  cls_extracted_dir: "Dataset/master_images/master_images/images"   # utilisé s'il contient l'image
+
+# -----------------------------------------------------------------------------
+#  Préparation
+# -----------------------------------------------------------------------------
+prepare:
+  seg:
+    out_dir: data/processed/seg
+    class_names: ["lesion"]          # 1 classe : zone foliaire malade
+    split: [0.70, 0.20, 0.10]        # train / val / test (si aucun split fourni)
+    use_augmented_in_train: false    # true = ajoute aug_data au train (déconseillé avec les augmentations en ligne)
+    offline_rot90: false             # true = ajoute des copies tournées 90/180/270° au train (utile en vue aérienne)
+    max_side: 1024                   # redimensionne les grandes images (accélère l'entraînement)
+    mask_threshold: 64               # seuil pour les masques RGB anti-aliasés (canal max >= seuil)
+    min_instance_area_px: 30         # ignore les composantes plus petites (bruit)
+    polygon_epsilon_px: 1.0          # simplification Douglas-Peucker des contours
+    n_preview: 10                    # images de vérification annotées
+  cls:
+    out_dir: data/processed/cls
+    min_images_per_class: 100        # classes plus rares exclues (non apprenables de façon fiable)
+    max_images_per_class_train: 800  # plafonne les classes majoritaires (équilibre + temps CPU)
+    image_size: 256                  # côté court après redimensionnement (stockage)
+    workers: 4
+    # Synonymes de cultures et de maladies (après normalisation automatique)
+    crop_aliases:
+      Paddy: Rice
+      Grapevine: Grape
+    class_aliases:
+      "Banana - black leaf streak banana black sigatoka": "Banana - black leaf streak"
+      "Banana - cordana leaf spot": "Banana - cordana"
+      "Banana - panama disease": "Banana - panama"
+      "Banana - insectpest": "Banana - insect pest"
+      "Cauliflower - bacterial spot rot": "Cauliflower - bacterial soft rot"
+      "Cauliflower - blackrot": "Cauliflower - black rot"
+      "Chilli - leafcurl": "Chilli - leaf curl"
+      "Chilli - leafspot": "Chilli - leaf spot"
+      "Corn - leaf blight": "Corn - northern leaf blight"
+      "Radish - downey mildew": "Radish - downy mildew"
+      "Tomato - bacterial leaf spot": "Tomato - bacterial spot"
+      "Wheat - bacterial leaf streak (black chaff) black chaff": "Wheat - bacterial leaf streak (black chaff)"
+      "Wheat - bacterial leaf streak (black chaff)black chaff": "Wheat - bacterial leaf streak (black chaff)"
+      "Wheat - septoria blotch blotch": "Wheat - septoria blotch"
+      "Wheat - septoria blotchseptoria": "Wheat - septoria blotch"
+
+# -----------------------------------------------------------------------------
+#  Modèle 1 — Segmentation d'instance des lésions (YOLO-seg)
+# -----------------------------------------------------------------------------
+seg:
+  model: yolo11n-seg.pt          # yolo11n-seg.pt | yolo11s-seg.pt | yolov8n-seg.pt | yolov8s-seg.pt
+  run_name: lesion_seg
+  epochs: 100
+  patience: 25                   # early stopping
+  imgsz: 640
+  batch: 8                       # -1 = auto (GPU uniquement)
+  workers: 2
+  optimizer: AdamW
+  lr0: 0.001
+  lrf: 0.01
+  cos_lr: true
+  weight_decay: 0.0005
+  warmup_epochs: 3
+  close_mosaic: 10
+  # Augmentations (vue de dessus : orientation arbitraire)
+  augment:
+    degrees: 90.0                # rotations aléatoires ±90°
+    flipud: 0.5                  # flip vertical
+    fliplr: 0.5                  # flip horizontal
+    hsv_h: 0.015
+    hsv_s: 0.6
+    hsv_v: 0.4                   # luminosité
+    translate: 0.1
+    scale: 0.5
+    mosaic: 1.0
+    mixup: 0.0
+    copy_paste: 0.1              # colle des lésions d'une image à l'autre (seg uniquement)
+  conf: 0.25                     # seuil de confiance en évaluation/prédiction
+  iou: 0.6
+
+# -----------------------------------------------------------------------------
+#  Modèle 2 — Diagnostic (classification de la maladie, YOLO-cls)
+# -----------------------------------------------------------------------------
+cls:
+  model: yolo11n-cls.pt          # yolo11n-cls.pt | yolo11s-cls.pt
+  run_name: disease_cls
+  epochs: 30
+  patience: 8
+  imgsz: 224
+  batch: 64
+  workers: 2
+  optimizer: AdamW
+  lr0: 0.001
+  cos_lr: true
+  dropout: 0.2
+  label_smoothing: 0.1
+  augment:
+    degrees: 30.0
+    flipud: 0.5
+    fliplr: 0.5
+    hsv_h: 0.015
+    hsv_s: 0.5
+    hsv_v: 0.4
+    erasing: 0.4
+    auto_augment: randaugment
+  top_k: 3
+
+# -----------------------------------------------------------------------------
+#  Inférence
+# -----------------------------------------------------------------------------
+predict:
+  seg_weights: models/best.pt
+  cls_weights: models/cls_best.pt
+  conf: 0.25
+  iou: 0.6
+  gsd_cm_per_px: 0.05            # résolution au sol (cm/pixel) ; ignorée si GeoTIFF projeté
+  tile_size: 640
+  tile_overlap: 0.25             # recouvrement entre tuiles (0-0.5)
+  tile_trigger: 1600             # découpage en tuiles si un côté dépasse cette taille
+  min_area_px: 30
+  max_map_side: 3000             # taille max de la carte PNG produite
+  vegetation_index: exg          # exg = Excess Green + Otsu (non supervisé) pour le % de végétation
+  out_dir: outputs/predictions
