@@ -129,6 +129,12 @@ annotées** est nécessaire avant un usage sur orthomosaïques réelles. Détail
 
 ## Licence et crédits
 
-Les jeux de données restent soumis à la licence de leurs auteurs respectifs (Kaggle,
-PlantVillage, PlantSeg, PlantDoc…). Modèles : [Ultralytics YOLO](https://github.com/ultralytics/ultralytics)
-(AGPL-3.0 — à prendre en compte pour la licence de ce projet).
+Code du projet sous licence **MIT** — © 2026 HIRWA Jean Baptiste (voir [LICENSE](LICENSE)).
+
+Dépendances et données soumises à leurs propres licences :
+[Ultralytics YOLO](https://github.com/ultralytics/ultralytics) est sous **AGPL-3.0** (un usage
+commercial ou un service en ligne basé sur ces modèles impose de respecter l'AGPL ou d'acquérir
+une licence Ultralytics Enterprise) ; les jeux de données restent soumis à la licence de leurs
+auteurs (Kaggle, PlantVillage, PlantSeg, PlantDoc…).
+
+**Auteur :** HIRWA Jean Baptiste
