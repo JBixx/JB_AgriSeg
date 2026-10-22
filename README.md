@@ -9,8 +9,6 @@ propose un diagnostic (top-3 des maladies probables) et un indice de végétatio
 👉 Toutes les décisions (données, modèles, augmentations, métriques, limites) sont justifiées dans
 **[METHODOLOGIE.md](METHODOLOGIE.md)**.
 
-<p align="center"><img src="outputs/predictions/demo/demo_carte.png" width="85%" alt="Carte des foyers"></p>
-
 ## Fonctionnalités
 
 - Conversion automatique masques PNG / COCO / YOLO → YOLO-seg unifié, split 70/20/10 reproductible et stratifié
@@ -120,6 +118,11 @@ entraînement, le projet peut donc être déplacé librement.
 
 Voir [METHODOLOGIE.md § 12](METHODOLOGIE.md#12-résultats-obtenus) et les rapports détaillés
 dans `outputs/evaluation/`.
+
+<img width="1100" height="572" alt="leaf_disease_seg__00014" src="https://github.com/user-attachments/assets/525a376c-9a19-4371-a031-698c9ab146a9" />
+
+<img width="1100" height="572" alt="leaf_disease_seg__00295" src="https://github.com/user-attachments/assets/9d2ad2da-54dd-4d05-9473-6693a49afc1a" />
+
 
 ## Limites
 
