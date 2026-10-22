@@ -53,8 +53,8 @@ Inspection réelle du dossier `Dataset/` (`inspect_dataset.py`, rapport dans
 - Quelques images de banques d'images portent un **filigrane** (dreamstime/alamy).
 - **Classification** : 332 libellés bruts, mais beaucoup de doublons de nommage (espaces finaux,
   suffixes « Google/Bing/Baidu » de collecte web, « - Copy », « Paddy » vs « Rice »,
-  « downey » vs « downy »…). Après harmonisation : **185 classes**, dont 96 ont ≥ 100 images
-  (62 293 images couvertes). **Longue traîne** : 51 classes ont < 10 images.
+  « downey » vs « downy »…). Après harmonisation : **174 classes**, dont 97 ont ≥ 100 images
+  (62 965 images couvertes). **Longue traîne** : 35 classes ont < 50 images (minimum 6).
 - **Déséquilibre** : de 1 à 3 360 images par classe ; 8 936 « sain » vs 58 017 « malade ».
 - **Biais de domaine** : 31 % des images viennent de PlantVillage (feuille isolée sur fond
   uni, laboratoire) — un modèle peut y apprendre le fond plutôt que la maladie.
@@ -142,7 +142,7 @@ maladie » en même temps. On découple donc : le modèle 1 dit *où et combien*
 
 | Décision | Valeur | Justification |
 |---|---|---|
-| Harmonisation des noms | automatique + table d'alias dans `config.yaml` | 332 → 185 classes réelles ; paramétrable |
+| Harmonisation des noms | automatique + table d'alias dans `config.yaml` | 332 → 174 classes réelles ; paramétrable |
 | Seuil minimal | ≥ 100 images / classe | en dessous, ni l'apprentissage ni l'évaluation ne sont fiables |
 | Plafond train | 800 images / classe, échantillonnage proportionnel aux sources | réduit le déséquilibre (1 → 3 360) et le temps de calcul, tout en gardant la diversité labo/terrain |
 | Splits | ceux fournis dans le zip (80/10/10), sans fuite vérifiée | respecte la déduplication faite en amont par l'auteur |
@@ -283,5 +283,17 @@ Toutes les décisions chiffrées ci-dessus sont des paramètres de `config.yaml`
 
 ## 12. Résultats obtenus
 
-*Section complétée après exécution — voir `outputs/evaluation/seg/rapport_evaluation.md` et
-`outputs/evaluation/cls/rapport_evaluation.md`.*
+**Jeux préparés** (`outputs/prepare_*_report.md`) :
+
+| Jeu | Train | Val | Test | Détail |
+|---|---|---|---|---|
+| Segmentation | 411 images / 3 304 foyers | 118 / 937 | 59 / 622 | 1 classe `lesion` |
+| Diagnostic | 36 709 | 6 280 | 6 314 | 97 classes, 31 cultures |
+
+**Validation de la chaîne** : 6/6 tests unitaires ; entraînement court (2 époques), évaluation,
+prédiction directe et par tuiles, export ONNX exécutés sans erreur. Sur le CPU de développement
+(i7-6600U, 2 cœurs), une époque de segmentation à 640 px dure ≈ 23 min : l'entraînement final
+est donc réalisé sur GPU.
+
+**Métriques sur le jeu de test** : *entraînement final en cours* — elles seront reportées ici
+depuis `outputs/evaluation/seg/rapport_evaluation.md` et `outputs/evaluation/cls/rapport_evaluation.md`.

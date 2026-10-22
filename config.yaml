@@ -14,7 +14,6 @@ project:
 #  Données brutes (dossier en lecture seule)
 # -----------------------------------------------------------------------------
 raw:
-  root: Dataset
   # Jeu de segmentation : images + masques binaires PNG (1 classe "lésion")
   seg_sources:
     - images: "Dataset/archive (1)/data/data/images"

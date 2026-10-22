@@ -118,7 +118,12 @@ def otsu_threshold(x: np.ndarray, bins: int = 256) -> float:
     m0 = np.cumsum(hist * mids) / np.maximum(w0, 1)
     m1 = (np.sum(hist * mids) - np.cumsum(hist * mids)) / np.maximum(w1, 1)
     var = w0 * w1 * (m0 - m1) ** 2
-    return float(mids[np.argmax(var)])
+    # Seuil = bord supérieur du bin k (classe 0 = bins 0..k). Si plusieurs k
+    # donnent la variance maximale (vallée vide entre deux modes), on prend le
+    # centre du plateau pour couper au milieu de la vallée.
+    best = np.flatnonzero(var >= var.max() * (1 - 1e-9))
+    k = best[len(best) // 2]
+    return float(edges[k + 1])
 
 
 def vegetation_mask(rgb: np.ndarray) -> np.ndarray:

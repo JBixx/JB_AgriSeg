@@ -323,9 +323,11 @@ def build_cls_table(cfg: dict) -> pd.DataFrame:
                 kept.append(g)
             else:
                 # proportionnel aux sources pour conserver la diversité terrain / labo
+                # (boucle explicite : groupby().apply() supprime la colonne de
+                #  regroupement depuis pandas 3, ce qui perdrait la source)
                 frac = cap / len(g)
-                kept.append(g.groupby("source_dataset", group_keys=False)
-                            .apply(lambda x: x.sample(max(1, int(round(len(x) * frac))), random_state=seed)))
+                for _, x in g.groupby("source_dataset"):
+                    kept.append(x.sample(max(1, int(round(len(x) * frac))), random_state=seed))
         m = pd.concat([pd.concat(kept), m[m.split != "train"]])
     m["dir"] = m.classe.map(safe_dirname)
     return m.sort_values(["split", "dir", "image_id"])
@@ -414,6 +416,7 @@ def _write_cls_report(cfg, m: pd.DataFrame, errors, out: Path) -> None:
     t = m.pivot_table(index="classe", columns="split", values="image_id", aggfunc="count", fill_value=0)
     t = t.reindex(columns=[s for s in SPLITS if s in t.columns])
     src = m.pivot_table(index="source_dataset", columns="split", values="image_id", aggfunc="count", fill_value=0)
+    src = src.reindex(columns=[s for s in SPLITS if s in src.columns])
     L = ["# Préparation — jeu de classification (diagnostic)", "",
          f"- Sortie : `{out.relative_to(ROOT).as_posix()}`", f"- Classes : {m.classe.nunique()}  |  Cultures : {m.crop.nunique()}",
          f"- Images : {len(m)}  ({', '.join(f'{s}={int((m.split == s).sum())}' for s in SPLITS)})",
